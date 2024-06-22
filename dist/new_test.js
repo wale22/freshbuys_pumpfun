@@ -44,6 +44,9 @@ var axios_1 = __importDefault(require("axios"));
 var web3_js_1 = require("@solana/web3.js");
 var grammy_1 = require("grammy");
 var api_1 = require("./api");
+var express_1 = __importDefault(require("express"));
+var app = (0, express_1.default)();
+var port = process.env.PORT || 3000;
 var url_endpoint = 'https://frontend-api.pump.fun/trades/latest';
 var connection = new web3_js_1.Connection('https://api.mainnet-beta.solana.com');
 var bot_token = "7351592175:AAHRKoYsnrMIEKM_qbw4BTFc6UCiajZl0TQ";
@@ -309,4 +312,18 @@ function listenForWSMessages() {
         });
     });
 }
-listenForWSMessages().catch(function (error) { return console.error('Error:', error); });
+app.get('/health', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0: return [4 /*yield*/, listenForWSMessages()];
+            case 1:
+                _a.sent();
+                res.status(200).send('OK');
+                return [2 /*return*/];
+        }
+    });
+}); });
+// Start the server
+app.listen(port, function () {
+    console.log("Server running on port ".concat(port));
+});

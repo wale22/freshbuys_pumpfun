@@ -17,6 +17,7 @@
     "@solana/web3.js": "^1.91.8",
     "axios": "^1.7.2",
     "grammy": "^1.25.0",
+    "express": "^4.19.2",
     "puppeteer": "^22.10.0"
   }
 }
