@@ -15,8 +15,6 @@
   },
   "dependencies": {
     "@solana/web3.js": "^1.91.8",
-    "@sparticuz/chromium": "^123.0.1",
-    "@vercel/node": "^3.0.1",
     "axios": "^1.7.2",
     "grammy": "^1.25.0",
     "puppeteer": "^22.10.0"
