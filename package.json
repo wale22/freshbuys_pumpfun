@@ -1,0 +1,24 @@
+{
+  "name": "freshbuys",
+  "version": "1.0.0",
+  "main": "dist/new_test.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/new_test.js",
+    "dev": "ts-node-dev src/message.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "@solana/web3.js": "^1.91.8",
+    "@sparticuz/chromium": "^123.0.1",
+    "@vercel/node": "^3.0.1",
+    "axios": "^1.7.2",
+    "grammy": "^1.25.0",
+    "puppeteer": "^22.10.0"
+  }
+}
