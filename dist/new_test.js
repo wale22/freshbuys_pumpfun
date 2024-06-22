@@ -39,21 +39,20 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+var puppeteer_1 = __importDefault(require("puppeteer"));
 var axios_1 = __importDefault(require("axios"));
 var web3_js_1 = require("@solana/web3.js");
 var grammy_1 = require("grammy");
 var api_1 = require("./api");
-var chromium_1 = __importDefault(require("@sparticuz/chromium"));
-var puppeteer_core_1 = __importDefault(require("puppeteer-core"));
+var url_endpoint = 'https://frontend-api.pump.fun/trades/latest';
 var connection = new web3_js_1.Connection('https://api.mainnet-beta.solana.com');
 var bot_token = "7351592175:AAHRKoYsnrMIEKM_qbw4BTFc6UCiajZl0TQ";
 var bot = new grammy_1.Bot(bot_token);
 var channel_id = '-1002214628234';
 var current_latest = '';
+var isRateLimited = false;
+var retryAfter = 1500; // Default retry time
 var arr_sent = [];
-chromium_1.default.setHeadlessMode = true;
-// Optional: If you'd like to disable webgl, true is the default.
-chromium_1.default.setGraphicsMode = false;
 var createTelegramMessage = function (data) {
     // Initialize an array to hold the formatted lines
     var messageLines = '';
@@ -254,12 +253,7 @@ function listenForWSMessages() {
         var _this = this;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, puppeteer_core_1.default.launch({
-                        args: chromium_1.default.args,
-                        defaultViewport: chromium_1.default.defaultViewport,
-                        executablePath: '/node_modules/@sparticuz/chromium/bin',
-                        headless: chromium_1.default.headless,
-                    })];
+                case 0: return [4 /*yield*/, puppeteer_1.default.launch()];
                 case 1:
                     browser = _a.sent();
                     return [4 /*yield*/, browser.pages()];
@@ -315,26 +309,4 @@ function listenForWSMessages() {
         });
     });
 }
-listenForWSMessages();
-function handler(req, res) {
-    return __awaiter(this, void 0, void 0, function () {
-        var error_5;
-        return __generator(this, function (_a) {
-            switch (_a.label) {
-                case 0:
-                    _a.trys.push([0, 2, , 3]);
-                    return [4 /*yield*/, listenForWSMessages()];
-                case 1:
-                    _a.sent();
-                    res.status(200).send('Listening for WebSocket messages');
-                    return [3 /*break*/, 3];
-                case 2:
-                    error_5 = _a.sent();
-                    res.status(500).send('Error: ' + error_5.message);
-                    return [3 /*break*/, 3];
-                case 3: return [2 /*return*/];
-            }
-        });
-    });
-}
-exports.default = handler;
+listenForWSMessages().catch(function (error) { return console.error('Error:', error); });
