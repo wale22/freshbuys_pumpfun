@@ -344,7 +344,7 @@ function startSelfPing() {
     if (host) {
         isSelfPinging = true;
         setInterval(function () {
-            axios_1.default.get("https://".concat(host, "/health"))
+            axios_1.default.get("https://freshbuys-pumpfun.onrender.com/health")
                 .then(function () { return console.log('Self-ping successful'); })
                 .catch(function (error) { return console.error('Self-ping failed:', error); });
         }, SELF_PING_INTERVAL);
