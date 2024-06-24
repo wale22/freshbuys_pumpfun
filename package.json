@@ -19,6 +19,8 @@
     "axios": "^1.7.2",
     "express": "^4.19.2",
     "grammy": "^1.25.0",
-    "puppeteer": "^22.10.0"
+    "puppeteer": "^22.10.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
   }
 }
