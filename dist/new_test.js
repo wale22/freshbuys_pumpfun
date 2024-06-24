@@ -45,10 +45,6 @@ var web3_js_1 = require("@solana/web3.js");
 var grammy_1 = require("grammy");
 var api_1 = require("./api");
 var express_1 = __importDefault(require("express"));
-var app = (0, express_1.default)();
-var port = process.env.PORT || 3000;
-var SELF_PING_INTERVAL = 14 * 60 * 1000; //
-var isSelfPinging = false;
 var url_endpoint = 'https://frontend-api.pump.fun/trades/latest';
 var connection = new web3_js_1.Connection('https://api.mainnet-beta.solana.com');
 var bot_token = "7351592175:AAHRKoYsnrMIEKM_qbw4BTFc6UCiajZl0TQ";
@@ -58,6 +54,7 @@ var current_latest = '';
 var isRateLimited = false;
 var retryAfter = 1500; // Default retry time
 var arr_sent = [];
+var app = (0, express_1.default)();
 var createTelegramMessage = function (data) {
     // Initialize an array to hold the formatted lines
     var messageLines = '';
@@ -314,47 +311,23 @@ function listenForWSMessages() {
         });
     });
 }
-app.get('/health', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+app.get('/trigger-websocket', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+    var error_5;
     return __generator(this, function (_a) {
         switch (_a.label) {
-            case 0: return [4 /*yield*/, listenForWSMessages()];
+            case 0:
+                _a.trys.push([0, 2, , 3]);
+                return [4 /*yield*/, listenForWSMessages()];
             case 1:
                 _a.sent();
-                res.status(200).send('OK');
-                return [2 /*return*/];
+                res.send('WebSocket listening triggered successfully!');
+                return [3 /*break*/, 3];
+            case 2:
+                error_5 = _a.sent();
+                console.error(error_5);
+                res.status(500).send('Error triggering WebSocket listening');
+                return [3 /*break*/, 3];
+            case 3: return [2 /*return*/];
         }
     });
 }); });
-// Start the server
-// Start self-ping route
-app.get('/start-self-ping', function (req, res) {
-    if (!isSelfPinging) {
-        startSelfPing();
-        res.status(200).send('Self-ping started');
-    }
-    else {
-        res.status(200).send('Self-ping already running');
-    }
-});
-// Self-ping function
-function startSelfPing() {
-    if (isSelfPinging)
-        return;
-    var host = process.env.RENDER_EXTERNAL_HOSTNAME;
-    if (host) {
-        isSelfPinging = true;
-        setInterval(function () {
-            axios_1.default.get("https://freshbuys-pumpfun.onrender.com/health")
-                .then(function () { return console.log('Self-ping successful'); })
-                .catch(function (error) { return console.error('Self-ping failed:', error); });
-        }, SELF_PING_INTERVAL);
-        console.log('Self-ping mechanism started');
-    }
-    else {
-        console.log('RENDER_EXTERNAL_HOSTNAME not set, self-ping not started');
-    }
-}
-// Start the server
-var server = app.listen(port, function () {
-    console.log("Server running on port ".concat(port));
-});
