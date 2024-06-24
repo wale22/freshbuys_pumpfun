@@ -14,6 +14,7 @@ let current_latest:any = '';
 let isRateLimited = false;
 let retryAfter = 1500; // Default retry time
 let arr_sent: any[] =[]
+const port = process.env.PORT || 10000;  // Use environment variable for port
 const app=express()
 
 
@@ -270,13 +271,17 @@ async function listenForWSMessages() {
 
 }
 
-app.get('/trigger-websocket', async (req, res) => {
-    // Handle the request to trigger WebSocket listening
+
+app.get('/trigger', async (req, res) => {
     try {
       await listenForWSMessages();
-      res.send('WebSocket listening triggered successfully!');
+      res.json({ message: 'Processing completed successfully' });
     } catch (error) {
       console.error(error);
-      res.status(500).send('Error triggering WebSocket listening');
+      res.status(500).json({ message: 'Error occurred during processing' });
     }
+});
+  
+app.listen(port, () => {
+console.log(`Server listening on port ${port}`);
 });

@@ -54,6 +54,7 @@ var current_latest = '';
 var isRateLimited = false;
 var retryAfter = 1500; // Default retry time
 var arr_sent = [];
+var port = process.env.PORT || 10000; // Use environment variable for port
 var app = (0, express_1.default)();
 var createTelegramMessage = function (data) {
     // Initialize an array to hold the formatted lines
@@ -311,7 +312,7 @@ function listenForWSMessages() {
         });
     });
 }
-app.get('/trigger-websocket', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
+app.get('/trigger', function (req, res) { return __awaiter(void 0, void 0, void 0, function () {
     var error_5;
     return __generator(this, function (_a) {
         switch (_a.label) {
@@ -320,14 +321,17 @@ app.get('/trigger-websocket', function (req, res) { return __awaiter(void 0, voi
                 return [4 /*yield*/, listenForWSMessages()];
             case 1:
                 _a.sent();
-                res.send('WebSocket listening triggered successfully!');
+                res.json({ message: 'Processing completed successfully' });
                 return [3 /*break*/, 3];
             case 2:
                 error_5 = _a.sent();
                 console.error(error_5);
-                res.status(500).send('Error triggering WebSocket listening');
+                res.status(500).json({ message: 'Error occurred during processing' });
                 return [3 /*break*/, 3];
             case 3: return [2 /*return*/];
         }
     });
 }); });
+app.listen(port, function () {
+    console.log("Server listening on port ".concat(port));
+});
