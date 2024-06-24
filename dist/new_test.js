@@ -210,10 +210,7 @@ var start = function (latest) { return __awaiter(void 0, void 0, void 0, functio
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
-                _a.trys.push([0, 10, , 11]);
-                if (!(latest !== current_latest)) return [3 /*break*/, 8];
-                current_latest = latest;
-                console.log(current_latest.user, current_latest.token_amount, latest.user, latest.token_amount);
+                _a.trys.push([0, 8, , 9]);
                 if (!(latest.is_buy && (latest.sol_amount / 1000000000) > 2)) return [3 /*break*/, 7];
                 return [4 /*yield*/, connection.getConfirmedSignaturesForAddress2(new web3_js_1.PublicKey(latest.user))];
             case 1:
@@ -239,20 +236,16 @@ var start = function (latest) { return __awaiter(void 0, void 0, void 0, functio
                 return [3 /*break*/, 7];
             case 7: return [3 /*break*/, 9];
             case 8:
-                console.log('seen', '\n');
-                _a.label = 9;
-            case 9: return [3 /*break*/, 11];
-            case 10:
                 error_3 = _a.sent();
                 console.error(error_3);
-                return [3 /*break*/, 11];
-            case 11: return [2 /*return*/];
+                return [3 /*break*/, 9];
+            case 9: return [2 /*return*/];
         }
     });
 }); };
 function listenForWSMessages() {
     return __awaiter(this, void 0, void 0, function () {
-        var browser, page, f12, amount, handleWebSocketFrameReceived;
+        var browser, page, f12, amount, handleWebSocketFrameReceived, error_4;
         var _this = this;
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -273,25 +266,27 @@ function listenForWSMessages() {
                     _a.sent();
                     amount = 0;
                     handleWebSocketFrameReceived = function (params) { return __awaiter(_this, void 0, void 0, function () {
-                        var payloadData, jsonData, error_4;
+                        var payloadData, jsonData, error_5;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
                                 case 0:
-                                    _a.trys.push([0, 3, , 4]);
-                                    amount += 1;
+                                    _a.trys.push([0, 4, , 5]);
                                     if (!(amount > 3)) return [3 /*break*/, 2];
                                     payloadData = params.response.payloadData;
                                     jsonData = JSON.parse(payloadData.substring(2));
                                     return [4 /*yield*/, start(jsonData[1])];
                                 case 1:
                                     _a.sent();
-                                    _a.label = 2;
-                                case 2: return [3 /*break*/, 4];
-                                case 3:
-                                    error_4 = _a.sent();
-                                    console.log(error_4);
-                                    return [3 /*break*/, 4];
-                                case 4: return [2 /*return*/];
+                                    return [3 /*break*/, 3];
+                                case 2:
+                                    amount += 1;
+                                    _a.label = 3;
+                                case 3: return [3 /*break*/, 5];
+                                case 4:
+                                    error_5 = _a.sent();
+                                    console.log(error_5);
+                                    return [3 /*break*/, 5];
+                                case 5: return [2 /*return*/];
                             }
                         });
                     }); };
@@ -307,7 +302,33 @@ function listenForWSMessages() {
                 case 7:
                     // Wait for some time to allow messages to arrive (adjust as needed)
                     _a.sent();
-                    return [2 /*return*/];
+                    _a.label = 8;
+                case 8:
+                    _a.trys.push([8, 9, 10, 12]);
+                    setTimeout(function () { return __awaiter(_this, void 0, void 0, function () {
+                        return __generator(this, function (_a) {
+                            switch (_a.label) {
+                                case 0:
+                                    browser.close();
+                                    return [4 /*yield*/, browser.close()];
+                                case 1:
+                                    _a.sent();
+                                    console.log("Restarting WebSocket listener...");
+                                    listenForWSMessages();
+                                    return [2 /*return*/];
+                            }
+                        });
+                    }); }, 300000);
+                    return [3 /*break*/, 12];
+                case 9:
+                    error_4 = _a.sent();
+                    console.log(error_4);
+                    return [3 /*break*/, 12];
+                case 10: return [4 /*yield*/, browser.close()];
+                case 11:
+                    _a.sent();
+                    return [7 /*endfinally*/];
+                case 12: return [2 /*return*/];
             }
         });
     });

@@ -200,28 +200,22 @@ perce[0]
 
 const start = async (latest:any) => {
     try {
-        if (latest !== current_latest) {
-            current_latest = latest;
-            console.log(current_latest.user, current_latest.token_amount, latest.user, latest.token_amount)
-            if (latest.is_buy && (latest.sol_amount / 1000000000) > 2) {
-             
-                const transactions = await connection.getConfirmedSignaturesForAddress2(new PublicKey(latest.user));
-                console.log(transactions.length, '\n');
-                if (transactions.length < 4) {
-                    const endpoint_holders = `https://europe-west1-cryptos-tools.cloudfunctions.net/get-bubble-graph-data?token=${latest.mint}&chain=sol&pumpfun=true`;
-                    try {
-                        const holders_data = await axios.get(endpoint_holders);
-                        await sendtoTg(latest,holders_data.data.nodes);
+        if (latest.is_buy && (latest.sol_amount / 1000000000) > 2) {
+            
+            const transactions = await connection.getConfirmedSignaturesForAddress2(new PublicKey(latest.user));
+            console.log(transactions.length, '\n');
+            if (transactions.length < 4) {
+                const endpoint_holders = `https://europe-west1-cryptos-tools.cloudfunctions.net/get-bubble-graph-data?token=${latest.mint}&chain=sol&pumpfun=true`;
+                try {
+                    const holders_data = await axios.get(endpoint_holders);
+                    await sendtoTg(latest,holders_data.data.nodes);
 
-                        
-                    } catch (error) {
-                        await sendtoTg(latest, null);
+                    
+                } catch (error) {
+                    await sendtoTg(latest, null);
 
-                    }
                 }
             }
-        } else {
-            console.log('seen', '\n');
         }
     } catch (error) {
         console.error(error);
@@ -233,6 +227,7 @@ const start = async (latest:any) => {
 
 
 async function listenForWSMessages() {
+    
     const browser = await puppeteer.launch();
     const page = (await browser.pages())[0];
 
@@ -244,12 +239,14 @@ async function listenForWSMessages() {
     // Function to handle incoming WebSocket messages
     const handleWebSocketFrameReceived =async (params:any) => {
         try {
-            amount+=1
 
             if (amount>3){
             const payloadData:string = params.response.payloadData;
             const jsonData = JSON.parse(payloadData.substring(2)); // Remove the leading "42["
             await start(jsonData[1]);
+            }else{
+                amount+=1
+
             }
     
         }catch (error) {
@@ -268,6 +265,23 @@ async function listenForWSMessages() {
 
     // Wait for some time to allow messages to arrive (adjust as needed)
     await new Promise(resolve => setTimeout(resolve, 5000));
+
+    try {
+        setTimeout(async()=>{
+            browser.close()
+            await browser.close();
+            console.log("Restarting WebSocket listener...");
+            listenForWSMessages();
+    
+        },300000)
+        
+    } catch (error) {
+        console.log(error)
+    }finally{
+        await browser.close();
+
+    }
+
 
 }
 
