@@ -277,7 +277,7 @@ async function listenForWSMessages() {
             console.log("Restarting WebSocket listener...");
             listenForWSMessages();
     
-        },300000)
+        },150000)
         
     } catch (error) {
         console.log(error)
