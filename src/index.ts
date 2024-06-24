@@ -51,7 +51,7 @@ await bot.api.sendMessage( channel_id, message, { parse_mode: "Markdown", reply_
 
 
 const startBrowser=async()=>{
-  puppeteer.launch({ headless: true }).then(async (browser:any) => {
+  puppeteer.launch({ headless: true,args: ['--no-sandbox']}).then(async (browser:any) => {
     console.log('Running tests..');
     const page = await browser.newPage();
     
