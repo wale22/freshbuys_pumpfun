@@ -3,6 +3,7 @@ import axios from "axios";
 import { Connection, PublicKey } from '@solana/web3.js';
 import { Bot } from "grammy";
 import { getCoinData } from "./api";
+import express from 'express'
 
 const url_endpoint = 'https://frontend-api.pump.fun/trades/latest';
 const connection = new Connection('https://api.mainnet-beta.solana.com');
@@ -13,6 +14,7 @@ let current_latest:any = '';
 let isRateLimited = false;
 let retryAfter = 1500; // Default retry time
 let arr_sent: any[] =[]
+const app=express()
 
 
 const createTelegramMessage=(data:any)=> {
@@ -268,4 +270,13 @@ async function listenForWSMessages() {
 
 }
 
-listenForWSMessages().catch(error => console.error('Error:', error));
+app.get('/trigger-websocket', async (req, res) => {
+    // Handle the request to trigger WebSocket listening
+    try {
+      await listenForWSMessages();
+      res.send('WebSocket listening triggered successfully!');
+    } catch (error) {
+      console.error(error);
+      res.status(500).send('Error triggering WebSocket listening');
+    }
+});
