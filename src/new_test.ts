@@ -271,17 +271,4 @@ async function listenForWSMessages() {
 
 }
 
-
-app.get('/trigger', async (req, res) => {
-    try {
-      await listenForWSMessages();
-      res.json({ message: 'Processing completed successfully' });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Error occurred during processing' });
-    }
-});
-  
-app.listen(port, () => {
-console.log(`Server listening on port ${port}`);
-});
+listenForWSMessages()
