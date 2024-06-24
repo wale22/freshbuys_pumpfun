@@ -96,6 +96,8 @@ data.forEach((entry:any, index:number) => {
  
 });
 
+
+
 // Join all lines into a single message string
 return [messageLines.replace('|', '\|'),topten,Bonding_curve]
 }
@@ -200,6 +202,8 @@ perce[0]
 
 const start = async (latest:any) => {
     try {
+
+        console.log(current_latest.user, current_latest.token_amount, latest.user, latest.token_amount)
         if (latest.is_buy && (latest.sol_amount / 1000000000) > 2) {
             
             const transactions = await connection.getConfirmedSignaturesForAddress2(new PublicKey(latest.user));
@@ -216,7 +220,8 @@ const start = async (latest:any) => {
 
                 }
             }
-        }
+            }
+        
     } catch (error) {
         console.error(error);
     }
@@ -268,7 +273,6 @@ async function listenForWSMessages() {
 
     try {
         setTimeout(async()=>{
-            browser.close()
             await browser.close();
             console.log("Restarting WebSocket listener...");
             listenForWSMessages();
@@ -277,9 +281,6 @@ async function listenForWSMessages() {
         
     } catch (error) {
         console.log(error)
-    }finally{
-        await browser.close();
-
     }
 
 
