@@ -68,7 +68,7 @@ var createTelegramMessage = function (data) {
         var percentage = entry.percentage.toFixed(2) + '%';
         var link = "[".concat(percentage, "](https://pump.fun/profile/").concat(entry.address, ")");
         // Every three entries, join them into a single line and push to messageLines
-        if ((index + 1) < 11) {
+        if ((index + 1) < 11 && entry.name !== 'Bonding Curve') {
             topten += entry.percentage;
             if ((index + 1) % 4 === 0 && index !== 1) {
                 if (entry.name !== undefined) {
@@ -315,7 +315,7 @@ function listenForWSMessages() {
                                         return [2 /*return*/];
                                 }
                             });
-                        }); }, 300000);
+                        }); }, 150000);
                     }
                     catch (error) {
                         console.log(error);
