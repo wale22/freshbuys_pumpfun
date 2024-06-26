@@ -1,325 +1,206 @@
-import puppeteer from "puppeteer";
 import axios from "axios";
-import { Connection, PublicKey } from '@solana/web3.js';
-import { Bot } from "grammy";
 import { getCoinData } from "./api";
-import express from 'express'
+import { params } from "./param";
+import { Bot} from "grammy";
 
-const url_endpoint = 'https://frontend-api.pump.fun/trades/latest';
-const connection = new Connection('https://api.mainnet-beta.solana.com');
-const bot_token = "7351592175:AAHRKoYsnrMIEKM_qbw4BTFc6UCiajZl0TQ";
+const puppeteer = require('puppeteer-extra');
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+const bot_token="7351592175:AAHRKoYsnrMIEKM_qbw4BTFc6UCiajZl0TQ"
 const bot = new Bot(bot_token);
 const channel_id ='-1002214628234';
-let current_latest:any = '';
-let isRateLimited = false;
-let retryAfter = 1500; // Default retry time
-let arr_sent: any[] =[]
-const port = process.env.PORT || 10000;  // Use environment variable for port
-const app=express()
+
+puppeteer.use(StealthPlugin());
+const url = `
+https://photon-sol.tinyastro.io/api/discover/search?buys_from=&buys_to=&dexes=pump&freeze_authority=false&lp_burned_perc=false&mint_authority=false&mkt_cap_from=&mkt_cap_to=&one_social=false&order_by=created_at&order_dir=desc&sells_from=&sells_to=&top_holders_perc=false&txns_from=&txns_to=&usd_liq_from=&usd_liq_to=&volume_from=&volume_to=`;
+let loggedone:any=null
+
+
+function formatTimeElapsed(currentTimeInSeconds:number, previousTimeInSeconds:number) {
+  var elapsedTime = currentTimeInSeconds - previousTimeInSeconds;
+  
+  var hours = Math.floor(elapsedTime / 3600);
+  var minutes = Math.floor((elapsedTime % 3600) / 60);
+  var seconds = elapsedTime % 60;
+  
+  var formattedTime = hours + "hr " + minutes + "min " + seconds + "sec";
+  return formattedTime;
+}
+
+
+
+const sendtoTg=async(filterData:any, creator:string,topOne:any)=>{
+  const filled= filterData.filter((token:any) => token.complete === true);
+  const launch=topOne.attributes
+  const nonFilled=filterData.length-filled.length
+  const tis=Date.now()/1000
+
+  if(nonFilled-filled < 3){
+    if(topOne.attributes.socials=== null){
+const message = 
+`🌟💊 New Good Creator Creation Detected 💊🌟\n
+🏷 \*${launch.name} (${launch.symbol}-sol)\*
+\`${launch.tokenAddress}\`
+
+🔍\*Creator:\*[${creator.substring(0,5)}](https://pump.fun/profile/${creator})
+💰 \*Market cap:\* $${Math.floor(launch.fdv)}
+
+🌟\*Best Previous:\*${filterData[0].name}
+\*ATH:\*$${Math.floor(filterData[0].usd_market_cap)}
+
+\*Non-filled:\*${nonFilled}
+\*filled:\*${filled.length}
+\*score:\*${Math.floor((filled.length/filterData.length)*100)}%
+
+\*No socials yet\*
+
+⏲ time elapsed since creation:${formatTimeElapsed(tis,launch.created_timestamp)}
+`
+await bot.api.sendMessage( channel_id, message, { parse_mode: "Markdown" });
+}else{
+const message = 
+`🌟💊 New Good Creator Creation Detected 💊🌟\n
+🏷 \*${launch.name} (${launch.symbol}-sol)\*
+\`${launch.tokenAddress}\`
+
+🔍\*Creator:\*[${creator.substring(0,5)}](https://pump.fun/profile/${creator})
+💰 \*Market cap:\* $${Math.floor(launch.fdv)}
+
+🌟\*Best Previous:\*${filterData[0].name}
+\*ATH:\*$${Math.floor(filterData[0].usd_market_cap)}
+
+\*Non-filled:\*${nonFilled}
+\*filled:\*${filled.length}
+\*score:\*${Math.floor((filled.length/filterData.length)*100)}%
+
+
+\*Telegram:\* ${launch.socials.telegram !==  null? launch.socials.telegram:''}
+\*Twitter(X):\* ${launch.socials.twitter !==  null? launch.socials.twitter:''}
+\*Website:\* ${launch.socials.website !==  null? launch.socials.website:''}
+
+⏲ time elapsed since creation:${formatTimeElapsed(tis,launch.created_timestamp)
+}
+`
+      await bot.api.sendMessage( channel_id, message,{ parse_mode: "Markdown", reply_parameters:{message_id:1}} );
+    }
+      
+
+  }
+ 
+
+}
 
 
 const filterData = async (creator: any) => {
-    const filtered_previous: any[] = [];
-  
-    try {
-      const res = await axios.get(`https://frontend-api.pump.fun/coins/user-created-coins/${creator}?offset=0&limit=50&includeNsfw=false`);
-      const previous = res.data;
- 
-        previous.sort((a: any, b: any) => b.usd_market_cap - a.usd_market_cap);
-        const seenAddresses = new Set();
+  const filtered_previous: any[] = [];
 
-        for (let index = 0; index < previous.length; index++) {
-            const token = previous[index];
-            if (!seenAddresses.has(token.mint)) {
-            filtered_previous.push(token);
-            seenAddresses.add(token.mint);
-            }
+  try {
+    const res = await axios.get(`https://frontend-api.pump.fun/coins/user-created-coins/${creator}?offset=0&limit=50&includeNsfw=false`);
+    const previous = res.data;
+    const filteredTokens = previous.filter((token: any) => token.usd_market_cap > 100000);
+
+    if (filteredTokens.length !== 0) {
+      previous.sort((a: any, b: any) => b.usd_market_cap - a.usd_market_cap);
+      const seenAddresses = new Set();
+
+      for (let index = 0; index < previous.length; index++) {
+        const token = previous[index];
+        if (!seenAddresses.has(token.mint)) {
+          filtered_previous.push(token);
+          seenAddresses.add(token.mint);
         }
-        return filtered_previous;
-        
-    } catch (error) {
-      console.error("Error fetching data:", error);
+      }
+      return filtered_previous;
+    } else {
       return false;
     }
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    return false;
+  }
 }
 
+const startBrowser=async()=>{
 
-const createTelegramMessage=(data:any)=> {
-// Initialize an array to hold the formatted lines
-let messageLines:string= '';
-// Initialize a temporary array to collect groups of three entries
-let topten: Number=0
-
-let Bonding_curve:Number=0
-// Iterate over the data array
-
-
-
-data.forEach((entry:any, index:number) => {
-    // Format the percentage and create the link
-    let percentage = entry.percentage.toFixed(2) + '%';
-    let link = `[${percentage}](https://pump.fun/profile/${entry.address})`;
+  puppeteer.launch({ headless: true }).then(async (browser:any) => {
+    console.log('Running tests..');
+    const page = await browser.newPage();
     
-  
-    // Every three entries, join them into a single line and push to messageLines
-    if ((index + 1) < 11 && entry.name !== 'Bonding Curve'){
-        topten+=entry.percentage
-        if ((index + 1) % 4 === 0 && index !== 1) {
-            if(entry.name !== undefined){
-                if (entry.name === 'Dev') {
-                    messageLines+=link+'(Dev) |\n'
-                }else if(entry.name === 'Bonding Curve'){
-                    Bonding_curve=entry.percentage
-                }
-                    
-                
-            }else{
-                messageLines+=link+' |\n'
+    await page.setExtraHTTPHeaders(params.xtraheaders);
+    await page.setCookie(...params.cookies);
+    await page.setRequestInterception(true);
 
-            }
-    
-        }else{
-            if(entry.name !== undefined){
-                if (entry.name === 'Dev') {
-                    messageLines+=link+'(Dev) |'
-                }else if(entry.name === 'Bonding Curve'){
-                    Bonding_curve+=entry.percentage
-                }
-                    
-                
-            }else{
-                messageLines+=link+' |'
+    let apiResponseJson = null;
 
-            }
-        }
-    }else{
-        if ((index + 1) % 4 === 0 && (index + 1) !== 1) {
-            if(entry.name !== undefined){
-                if (entry.name === 'Dev') {
-                    messageLines+=link+'(Dev) |\n'
-                }else if(entry.name === 'Bonding Curve'){
-                    Bonding_curve=entry.percentage
-                }
-                    
-                
-            }else{
-                messageLines+=link+' |\n'
+    page.on('request', (request:any) => {
+      if (request.url().includes('/api/discover')) {
+        request.continue();
+      } else {
+        request.continue();
+      }
+    });
 
-            }
-    
-        }else{
-            if(entry.name !== undefined){
-                if (entry.name === 'Dev') {
-                    messageLines+=link+'(Dev) |'
-                }else if(entry.name === 'Bonding Curve'){
-                    Bonding_curve+=entry.percentage
-                }
-                    
-                
-            }else{
-                messageLines+=link+'|'
-
-            }
-        }
-    }
- 
-});
-
-
-
-// Join all lines into a single message string
-return [messageLines.replace('|', '\|'),topten,Bonding_curve]
-}
-
-
-
-async function getBalance(walletAddress:PublicKey) {
-    try {
-      // Fetch balance in lamports
-      const balance:any =await connection.getBalance(walletAddress);
-  
-      const solBalance =balance/1000000000;
-      return solBalance.toFixed(4)
-    } catch (error) {
-      console.error("Error fetching balance:", error);
-    }
-}
-
-function formatTimeElapsed(currentTimeInSeconds:number, previousTimeInSeconds:number) {
-    var elapsedTime = currentTimeInSeconds - previousTimeInSeconds;
-    
-    var hours = Math.floor(elapsedTime / 3600);
-    var minutes = Math.floor((elapsedTime % 3600) / 60);
-    var seconds = Math.floor(elapsedTime % 60);
-    
-    var formattedTime = hours + "hr " + minutes + "min " + seconds + "sec";
-    return formattedTime;
-}
-
-const sendtoTg = async (data:any,holders_data:any) => {
-    const launch = await getCoinData(data.mint);
-    const filtData:any= await filterData(launch.creator)
-    const filled= filtData.filter((token:any) => token.complete === true);
-    const nonFilled=filtData.length-filled.length
-    let perce:any=''
-    let balance:any=await getBalance(new PublicKey(data.user))
-    if (holders_data !== null) {
-        perce=createTelegramMessage(holders_data)
-    } 
-    const now = new Date();
-
-    const formattedDate = now.toLocaleDateString();
-    const formattedTime = now.toLocaleTimeString();
-
-    const tis=Date.now()/1000
-
-    const time_five_min=arr_sent.filter((buy)=>{
-        if(buy.address === data.mint && (Number(tis) - buy.time) < 300 ){
-            return true
-        }
-    })
-
-    const time_one_hr=arr_sent.filter((buy)=>{
-        if(buy.address === data.mint && (Number(tis) - buy.time) < 3600 ){
-            return true
-        }
-    })
-
-    const time_six_hr=arr_sent.filter((buy)=>{
-        if(buy.address === data.mint && (Number(tis) - buy.time) < 3600*6 ){
-            return true
-        }
-    })
-
-    const time_tf_hr=arr_sent.filter((buy)=>{
-        if(buy.address === data.mint && (Number(tis) - buy.time) < 3600*24 ){
-            return true
-        }
-    })
-
-    arr_sent.push({address:data.mint, time:tis})
-
-
-let message = `🌟💊 FRESH WALLET BUY Detected 💊🌟\n
-🏷 *${launch.name} (${launch.symbol}-sol)*
-\`${launch.mint}\`
-
-🔍*Creator:* [${launch.creator.substring(0,7)}](https://pump.fun/profile/${launch.creator})
-🔋 filled:${filled.length}
-🗑 Non-filled:${nonFilled}
-score:${Math.floor((filled.length/filterData.length)*100)}%
-
-[${data.user.substring(0,7)}](https://pump.fun/profile/${data.user}) *BOUGHT ${data.sol_amount / 1000000000} SOL*
-user wallet balance: ${(balance-Number((data.sol_amount / 1000000000).toFixed(4))).toFixed(2)} sol
-
-Fresh Wallet Stats:
-5min: ${time_five_min.length + 1} 1h: ${time_one_hr.length + 1} 6h: ${time_six_hr.length + 1}  24h: ${time_tf_hr.length + 1}
-
-💰 *Market cap:* $${Math.floor(launch.usd_market_cap)}
-
-*Telegram:* ${launch.telegram !== null ? launch.telegram : 'Not found'}
-*Twitter:* ${launch.twitter !== null ? launch.twitter : 'Not found'}
-*Website:* ${launch.website !== null ? launch.website : 'Not found'}
-
-Bonding Curve: ${Math.floor(perce[2])}% | Top 10 holds: ${Math.floor(perce[1])}%
-
-${
-perce[0]
-}
-
-⏲ time elapsed :${formatTimeElapsed(tis,(launch.created_timestamp/1000))}
-
-[pumpfun |](https://pump.fun/${launch.mint}) [Photon |](https://photon-sol.tinyastro.io/en/lp/${launch.mint}?handle=413366f37f1bc7eef9bd0) [Bonk |](https://t.me/bonkbot_bot?start=ref_p8tvh_ca_${launch.mint})
-`;
-    await bot.api.sendMessage(channel_id, message, { parse_mode: "Markdown", reply_parameters:{message_id:191} });
-};
-
-
-
-const start = async (latest:any) => {
-    try {
-
-        console.log(current_latest.user, current_latest.token_amount, latest.user, latest.token_amount)
-        if (latest.is_buy && (latest.sol_amount / 1000000000) > 2) {
-            
-            const transactions = await connection.getConfirmedSignaturesForAddress2(new PublicKey(latest.user));
-            console.log(transactions.length, '\n');
-            if (transactions.length < 4) {
-                const endpoint_holders = `https://europe-west1-cryptos-tools.cloudfunctions.net/get-bubble-graph-data?token=${latest.mint}&chain=sol&pumpfun=true`;
-                try {
-                    const holders_data = await axios.get(endpoint_holders);
-                    await sendtoTg(latest,holders_data.data.nodes);
-
-                    
-                } catch (error) {
-                    await sendtoTg(latest, null);
-
-                }
-            }
-            }
-        
-    } catch (error) {
-        console.error(error);
-    }
-};
-
-
-
-
-
-async function listenForWSMessages() {
-    
-    const browser = await puppeteer.launch();
-    const page = (await browser.pages())[0];
-
-    // Create CDP session and enable domains
-    const f12 = await page.target().createCDPSession();
-    await f12.send('Network.enable');
-    await f12.send('Page.enable');
-    let amount= 0
-    // Function to handle incoming WebSocket messages
-    const handleWebSocketFrameReceived =async (params:any) => {
+    page.on('response', async (response:any) => {
+      if (response.url().includes('/api/discover')) {
         try {
-
-            if (amount>3){
-            const payloadData:string = params.response.payloadData;
-            const jsonData = JSON.parse(payloadData.substring(2)); // Remove the leading "42["
-            await start(jsonData[1]);
+          apiResponseJson = await response.json();
+          const topOne=apiResponseJson.data[0]
+          if (loggedone !== null){
+            if (loggedone.attributes.tokenAddress !== topOne.attributes.tokenAddress){
+              loggedone=topOne
+              const launch=topOne.attributes
+              const other_data:any=await getCoinData(launch.tokenAddress)
+              const creator=other_data.creator
+              filterData(creator).then(async(filter_arr:any)=>{
+                if (filter_arr){
+                  await sendtoTg(filter_arr,creator,topOne)
+                }
+              })
+              console.log('scaning...')
+              console.log(topOne.attributes.tokenAddress,'\n')
+              
             }else{
-                amount+=1
+              console.log('seen')
+              console.log(topOne.attributes.tokenAddress,'\n')
 
             }
-    
-        }catch (error) {
-            console.log(error)
-        }
-   
+          }else{
+            loggedone=topOne
+            const launch=topOne.attributes
+            const other_data:any=await getCoinData(launch.tokenAddress)
+            const creator=other_data.creator
+            filterData(creator).then(async(filter_arr:any)=>{
+              if (filter_arr){
+                await sendtoTg(filter_arr,creator,topOne)
+              }
+            })
 
-        // Process the decoded message data further (if needed)
+          }
+    
+        } catch (error) {
+        console.error('Failed to parse JSON:', error);
+          
+        }
+      }
+    })
+
+
+    const reloadPage = async () => {
+      await page.reload();
     };
 
-    // Listen for WebSocket frames
-    f12.on('Network.webSocketFrameReceived', handleWebSocketFrameReceived);
+    await page.goto(url);
 
-    // Navigate to the target site (or trigger action that opens the websocket)
-    await page.goto('https://www.pump.fun'); // Replace with the actual site URL
+   
+    const reloadInterval=setInterval(reloadPage, 1000);
 
-    // Wait for some time to allow messages to arrive (adjust as needed)
-    await new Promise(resolve => setTimeout(resolve, 5000));
-
-    try {
-        setTimeout(async()=>{
-            await browser.close();
-            console.log("Restarting WebSocket listener...");
-            listenForWSMessages();
-    
-        },150000)
-        
-    } catch (error) {
-        console.log(error)
-    }
+    setTimeout(async () => {
+      clearInterval(reloadInterval)
+      await browser.close();
+      startBrowser();
+    }, 100000);
 
 
+  })
 }
 
-listenForWSMessages()
+startBrowser()
