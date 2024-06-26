@@ -56,6 +56,37 @@ var retryAfter = 1500; // Default retry time
 var arr_sent = [];
 var port = process.env.PORT || 10000; // Use environment variable for port
 var app = (0, express_1.default)();
+var filterData = function (creator) { return __awaiter(void 0, void 0, void 0, function () {
+    var filtered_previous, res, previous, seenAddresses, index, token, error_1;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                filtered_previous = [];
+                _a.label = 1;
+            case 1:
+                _a.trys.push([1, 3, , 4]);
+                return [4 /*yield*/, axios_1.default.get("https://frontend-api.pump.fun/coins/user-created-coins/".concat(creator, "?offset=0&limit=50&includeNsfw=false"))];
+            case 2:
+                res = _a.sent();
+                previous = res.data;
+                previous.sort(function (a, b) { return b.usd_market_cap - a.usd_market_cap; });
+                seenAddresses = new Set();
+                for (index = 0; index < previous.length; index++) {
+                    token = previous[index];
+                    if (!seenAddresses.has(token.mint)) {
+                        filtered_previous.push(token);
+                        seenAddresses.add(token.mint);
+                    }
+                }
+                return [2 /*return*/, filtered_previous];
+            case 3:
+                error_1 = _a.sent();
+                console.error("Error fetching data:", error_1);
+                return [2 /*return*/, false];
+            case 4: return [2 /*return*/];
+        }
+    });
+}); };
 var createTelegramMessage = function (data) {
     // Initialize an array to hold the formatted lines
     var messageLines = '';
@@ -131,7 +162,7 @@ var createTelegramMessage = function (data) {
 };
 function getBalance(walletAddress) {
     return __awaiter(this, void 0, void 0, function () {
-        var balance, solBalance, error_1;
+        var balance, solBalance, error_2;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -142,8 +173,8 @@ function getBalance(walletAddress) {
                     solBalance = balance / 1000000000;
                     return [2 /*return*/, solBalance.toFixed(4)];
                 case 2:
-                    error_1 = _a.sent();
-                    console.error("Error fetching balance:", error_1);
+                    error_2 = _a.sent();
+                    console.error("Error fetching balance:", error_2);
                     return [3 /*break*/, 3];
                 case 3: return [2 /*return*/];
             }
@@ -159,15 +190,20 @@ function formatTimeElapsed(currentTimeInSeconds, previousTimeInSeconds) {
     return formattedTime;
 }
 var sendtoTg = function (data, holders_data) { return __awaiter(void 0, void 0, void 0, function () {
-    var launch, perce, balance, now, formattedDate, formattedTime, tis, time_five_min, time_one_hr, time_six_hr, time_tf_hr, message;
+    var launch, filtData, filled, nonFilled, perce, balance, now, formattedDate, formattedTime, tis, time_five_min, time_one_hr, time_six_hr, time_tf_hr, message;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0: return [4 /*yield*/, (0, api_1.getCoinData)(data.mint)];
             case 1:
                 launch = _a.sent();
+                return [4 /*yield*/, filterData(launch.creator)];
+            case 2:
+                filtData = _a.sent();
+                filled = filtData.filter(function (token) { return token.complete === true; });
+                nonFilled = filtData.length - filled.length;
                 perce = '';
                 return [4 /*yield*/, getBalance(new web3_js_1.PublicKey(data.user))];
-            case 2:
+            case 3:
                 balance = _a.sent();
                 if (holders_data !== null) {
                     perce = createTelegramMessage(holders_data);
@@ -197,16 +233,16 @@ var sendtoTg = function (data, holders_data) { return __awaiter(void 0, void 0, 
                     }
                 });
                 arr_sent.push({ address: data.mint, time: tis });
-                message = "\uD83C\uDF1F\uD83D\uDC8A FRESH WALLET BUY Detected \uD83D\uDC8A\uD83C\uDF1F\n\n\uD83C\uDFF7 *".concat(launch.name, " (").concat(launch.symbol, "-sol)*\n`").concat(launch.mint, "`\n\n[").concat(data.user.substring(0, 7), "](https://pump.fun/profile/").concat(data.user, ") *BOUGHT ").concat(data.sol_amount / 1000000000, " SOL*\nuser wallet balance: ").concat((balance - Number((data.sol_amount / 1000000000).toFixed(4))).toFixed(2), " sol\n\nFresh Wallet Stats:\n5min: ").concat(time_five_min.length + 1, " 1h: ").concat(time_one_hr.length + 1, " 6h: ").concat(time_six_hr.length + 1, "  24h: ").concat(time_tf_hr.length + 1, "\n\n\uD83D\uDD0D*Creator:* [").concat(launch.creator.substring(0, 7), "](https://pump.fun/profile/").concat(launch.creator, ")\n\uD83D\uDCB0 *Market cap:* $").concat(Math.floor(launch.usd_market_cap), "\n\n*Telegram:* ").concat(launch.telegram !== null ? launch.telegram : 'Not found', "\n*Twitter:* ").concat(launch.twitter !== null ? launch.twitter : 'Not found', "\n*Website:* ").concat(launch.website !== null ? launch.website : 'Not found', "\n\nBonding Curve: ").concat(Math.floor(perce[2]), "% | Top 10 holds: ").concat(Math.floor(perce[1]), "%\n\n").concat(perce[0], "\n\n\u23F2 time elapsed :").concat(formatTimeElapsed(tis, (launch.created_timestamp / 1000)), "\n\n[pumpfun |](https://pump.fun/").concat(launch.mint, ") [Photon |](https://photon-sol.tinyastro.io/en/lp/").concat(launch.mint, "?handle=413366f37f1bc7eef9bd0) [Bonk |](https://t.me/bonkbot_bot?start=ref_p8tvh_ca_").concat(launch.mint, ")\n");
+                message = "\uD83C\uDF1F\uD83D\uDC8A FRESH WALLET BUY Detected \uD83D\uDC8A\uD83C\uDF1F\n\n\uD83C\uDFF7 *".concat(launch.name, " (").concat(launch.symbol, "-sol)*\n`").concat(launch.mint, "`\n\n[").concat(data.user.substring(0, 7), "](https://pump.fun/profile/").concat(data.user, ") *BOUGHT ").concat(data.sol_amount / 1000000000, " SOL*\nuser wallet balance: ").concat((balance - Number((data.sol_amount / 1000000000).toFixed(4))).toFixed(2), " sol\n\nFresh Wallet Stats:\n5min: ").concat(time_five_min.length + 1, " 1h: ").concat(time_one_hr.length + 1, " 6h: ").concat(time_six_hr.length + 1, "  24h: ").concat(time_tf_hr.length + 1, "\n\n\uD83D\uDD0D*Creator:* [").concat(launch.creator.substring(0, 7), "](https://pump.fun/profile/").concat(launch.creator, ")\nNon-filled:").concat(nonFilled, "\nfilled:").concat(filled.length, "\nscore:").concat(Math.floor((filled.length / filterData.length) * 100), "%\n\n\uD83D\uDCB0 *Market cap:* $").concat(Math.floor(launch.usd_market_cap), "\n\n*Telegram:* ").concat(launch.telegram !== null ? launch.telegram : 'Not found', "\n*Twitter:* ").concat(launch.twitter !== null ? launch.twitter : 'Not found', "\n*Website:* ").concat(launch.website !== null ? launch.website : 'Not found', "\n\nBonding Curve: ").concat(Math.floor(perce[2]), "% | Top 10 holds: ").concat(Math.floor(perce[1]), "%\n\n").concat(perce[0], "\n\n\u23F2 time elapsed :").concat(formatTimeElapsed(tis, (launch.created_timestamp / 1000)), "\n\n[pumpfun |](https://pump.fun/").concat(launch.mint, ") [Photon |](https://photon-sol.tinyastro.io/en/lp/").concat(launch.mint, "?handle=413366f37f1bc7eef9bd0) [Bonk |](https://t.me/bonkbot_bot?start=ref_p8tvh_ca_").concat(launch.mint, ")\n");
                 return [4 /*yield*/, bot.api.sendMessage(channel_id, message, { parse_mode: "Markdown", reply_parameters: { message_id: 191 } })];
-            case 3:
+            case 4:
                 _a.sent();
                 return [2 /*return*/];
         }
     });
 }); };
 var start = function (latest) { return __awaiter(void 0, void 0, void 0, function () {
-    var transactions, endpoint_holders, holders_data, error_2, error_3;
+    var transactions, endpoint_holders, holders_data, error_3, error_4;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -230,15 +266,15 @@ var start = function (latest) { return __awaiter(void 0, void 0, void 0, functio
                 _a.sent();
                 return [3 /*break*/, 7];
             case 5:
-                error_2 = _a.sent();
+                error_3 = _a.sent();
                 return [4 /*yield*/, sendtoTg(latest, null)];
             case 6:
                 _a.sent();
                 return [3 /*break*/, 7];
             case 7: return [3 /*break*/, 9];
             case 8:
-                error_3 = _a.sent();
-                console.error(error_3);
+                error_4 = _a.sent();
+                console.error(error_4);
                 return [3 /*break*/, 9];
             case 9: return [2 /*return*/];
         }
@@ -267,7 +303,7 @@ function listenForWSMessages() {
                     _a.sent();
                     amount = 0;
                     handleWebSocketFrameReceived = function (params) { return __awaiter(_this, void 0, void 0, function () {
-                        var payloadData, jsonData, error_4;
+                        var payloadData, jsonData, error_5;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
                                 case 0:
@@ -284,8 +320,8 @@ function listenForWSMessages() {
                                     _a.label = 3;
                                 case 3: return [3 /*break*/, 5];
                                 case 4:
-                                    error_4 = _a.sent();
-                                    console.log(error_4);
+                                    error_5 = _a.sent();
+                                    console.log(error_5);
                                     return [3 /*break*/, 5];
                                 case 5: return [2 /*return*/];
                             }

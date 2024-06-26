@@ -18,6 +18,32 @@ const port = process.env.PORT || 10000;  // Use environment variable for port
 const app=express()
 
 
+const filterData = async (creator: any) => {
+    const filtered_previous: any[] = [];
+  
+    try {
+      const res = await axios.get(`https://frontend-api.pump.fun/coins/user-created-coins/${creator}?offset=0&limit=50&includeNsfw=false`);
+      const previous = res.data;
+ 
+        previous.sort((a: any, b: any) => b.usd_market_cap - a.usd_market_cap);
+        const seenAddresses = new Set();
+
+        for (let index = 0; index < previous.length; index++) {
+            const token = previous[index];
+            if (!seenAddresses.has(token.mint)) {
+            filtered_previous.push(token);
+            seenAddresses.add(token.mint);
+            }
+        }
+        return filtered_previous;
+        
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      return false;
+    }
+}
+
+
 const createTelegramMessage=(data:any)=> {
 // Initialize an array to hold the formatted lines
 let messageLines:string= '';
@@ -26,6 +52,9 @@ let topten: Number=0
 
 let Bonding_curve:Number=0
 // Iterate over the data array
+
+
+
 data.forEach((entry:any, index:number) => {
     // Format the percentage and create the link
     let percentage = entry.percentage.toFixed(2) + '%';
@@ -129,6 +158,9 @@ function formatTimeElapsed(currentTimeInSeconds:number, previousTimeInSeconds:nu
 
 const sendtoTg = async (data:any,holders_data:any) => {
     const launch = await getCoinData(data.mint);
+    const filtData:any= await filterData(launch.creator)
+    const filled= filtData.filter((token:any) => token.complete === true);
+    const nonFilled=filtData.length-filled.length
     let perce:any=''
     let balance:any=await getBalance(new PublicKey(data.user))
     if (holders_data !== null) {
@@ -179,6 +211,10 @@ Fresh Wallet Stats:
 5min: ${time_five_min.length + 1} 1h: ${time_one_hr.length + 1} 6h: ${time_six_hr.length + 1}  24h: ${time_tf_hr.length + 1}
 
 🔍*Creator:* [${launch.creator.substring(0,7)}](https://pump.fun/profile/${launch.creator})
+Non-filled:${nonFilled}
+filled:${filled.length}
+score:${Math.floor((filled.length/filterData.length)*100)}%
+
 💰 *Market cap:* $${Math.floor(launch.usd_market_cap)}
 
 *Telegram:* ${launch.telegram !== null ? launch.telegram : 'Not found'}
