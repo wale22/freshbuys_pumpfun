@@ -204,16 +204,16 @@ let message = `🌟💊 FRESH WALLET BUY Detected 💊🌟\n
 🏷 *${launch.name} (${launch.symbol}-sol)*
 \`${launch.mint}\`
 
+🔍*Creator:* [${launch.creator.substring(0,7)}](https://pump.fun/profile/${launch.creator})
+🔋 filled:${filled.length}
+🗑 Non-filled:${nonFilled}
+score:${Math.floor((filled.length/filterData.length)*100)}%
+
 [${data.user.substring(0,7)}](https://pump.fun/profile/${data.user}) *BOUGHT ${data.sol_amount / 1000000000} SOL*
 user wallet balance: ${(balance-Number((data.sol_amount / 1000000000).toFixed(4))).toFixed(2)} sol
 
 Fresh Wallet Stats:
 5min: ${time_five_min.length + 1} 1h: ${time_one_hr.length + 1} 6h: ${time_six_hr.length + 1}  24h: ${time_tf_hr.length + 1}
-
-🔍*Creator:* [${launch.creator.substring(0,7)}](https://pump.fun/profile/${launch.creator})
-Non-filled:${nonFilled}
-filled:${filled.length}
-score:${Math.floor((filled.length/filterData.length)*100)}%
 
 💰 *Market cap:* $${Math.floor(launch.usd_market_cap)}
 
