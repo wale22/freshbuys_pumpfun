@@ -37,7 +37,7 @@ const sendtoTg=async(filterData:any, creator:string,topOne:any)=>{
   if(nonFilled-filled < 3){
     if(topOne.attributes.socials=== null){
 const message = 
-`🌟💊 New Good Creator Creation Detected 💊🌟\n
+`💊 New Good Creator Creation💊\n
 🏷 \*${launch.name} (${launch.symbol}-sol)\*
 \`${launch.tokenAddress}\`
 
@@ -55,10 +55,10 @@ const message =
 
 ⏲ time elapsed since creation:${formatTimeElapsed(tis,launch.created_timestamp)}
 `
-await bot.api.sendMessage( channel_id, message, { parse_mode: "Markdown" });
+await bot.api.sendMessage( channel_id, message,{ parse_mode: "Markdown", reply_parameters:{message_id:2417}} );
 }else{
 const message = 
-`🌟💊 New Good Creator Creation Detected 💊🌟\n
+`💊 New Good Creator Creation Detected 💊\n
 🏷 \*${launch.name} (${launch.symbol}-sol)\*
 \`${launch.tokenAddress}\`
 
@@ -80,7 +80,7 @@ const message =
 ⏲ time elapsed since creation:${formatTimeElapsed(tis,launch.created_timestamp)
 }
 `
-      await bot.api.sendMessage( channel_id, message,{ parse_mode: "Markdown", reply_parameters:{message_id:1}} );
+      await bot.api.sendMessage( channel_id, message,{ parse_mode: "Markdown", reply_parameters:{message_id:2417}} );
     }
       
 
@@ -121,7 +121,7 @@ const filterData = async (creator: any) => {
 
 const startBrowser=async()=>{
 
-  puppeteer.launch({ headless: true }).then(async (browser:any) => {
+  puppeteer.launch({ args:['--no-sandbox']}).then(async (browser:any) => {
     console.log('Running tests..');
     const page = await browser.newPage();
     
