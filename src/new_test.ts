@@ -34,7 +34,6 @@ const sendtoTg=async(filterData:any, creator:string,topOne:any)=>{
   const nonFilled=filterData.length-filled.length
   const tis=Date.now()/1000
 
-  if(nonFilled-filled < 3){
     if(topOne.attributes.socials=== null){
 const message = 
 `💊 New Good Creator Creation💊\n
@@ -82,10 +81,7 @@ const message =
 `
       await bot.api.sendMessage( channel_id, message,{ parse_mode: "Markdown", reply_parameters:{message_id:2417}} );
     }
-      
-
-  }
- 
+     
 
 }
 
